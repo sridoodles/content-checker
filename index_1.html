@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Content Quality Checker — Polestar Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2249FF;--bg:#F5F4F1;--surface:#FFFFFF;--surface2:#EEECEA;
+  --border:rgba(0,0,0,0.08);--border-md:rgba(0,0,0,0.14);
+  --text:#111110;--text2:#6B6A67;--text3:#A09F9B;
+  --green:#1D9E75;--green-bg:#E1F5EE;--green-t:#0F6E56;
+  --amber:#BA7517;--amber-bg:#FAEEDA;--amber-t:#854F0B;
+  --red:#D85A30;--red-bg:#FAECE7;--red-t:#993C1D;
+  --r:10px;--rl:14px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:2rem 1rem 5rem;font-size:15px;line-height:1.6}
+.wrap{max-width:800px;margin:0 auto}
+
+.hd{display:flex;align-items:center;justify-content:space-between;padding-bottom:1.25rem;border-bottom:1px solid var(--border);margin-bottom:2rem}
+.brand{display:flex;align-items:center;gap:9px}
+.bdot{width:8px;height:8px;border-radius:50%;background:var(--blue)}
+.bname{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.06em;text-transform:uppercase}
+.sep{color:var(--border-md)}
+.tname{font-size:12px;font-weight:600;color:var(--text)}
+.ver{font-size:11px;color:var(--text3);background:var(--surface2);padding:3px 9px;border-radius:20px}
+
+.icard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;margin-bottom:1rem}
+.lbl{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+
+.upload-zone{border:1.5px dashed var(--border-md);border-radius:var(--r);padding:1.25rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:12px;position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:rgba(34,73,255,.03)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.uz-icon{font-size:22px;color:var(--text3);margin-bottom:5px}
+.uz-text{font-size:13px;color:var(--text2)}
+.uz-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.uz-file{font-size:12px;color:var(--blue);font-weight:500;margin-top:6px;display:none}
+
+.divider{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--text3);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+textarea{width:100%;min-height:140px;resize:vertical;font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.65;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;outline:none;transition:border-color .15s}
+textarea:focus{border-color:var(--blue);background:#fff}
+textarea::placeholder{color:var(--text3)}
+
+.meta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.meta-field input{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;outline:none;transition:border-color .15s}
+.meta-field input:focus{border-color:var(--blue);background:#fff}
+.meta-field input::placeholder{color:var(--text3)}
+
+.acts{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+.btn-p{background:var(--blue);color:#fff;border:none;border-radius:var(--r);padding:11px 24px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px;transition:opacity .15s}
+.btn-p:hover{opacity:.87}
+.btn-p:active{transform:scale(.98)}
+.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.btn-g{background:none;color:var(--text2);border:1px solid var(--border-md);border-radius:var(--r);padding:11px 18px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s}
+.btn-g:hover{background:var(--surface2)}
+.wc{font-size:12px;color:var(--text3);margin-left:auto}
+
+.err{display:none;background:var(--red-bg);color:var(--red-t);border:1px solid rgba(216,90,48,.2);border-radius:var(--r);padding:12px 14px;font-size:13px;margin-bottom:1rem}
+.err.show{display:block}
+
+.load{display:none;text-align:center;padding:3rem 0}
+.load.show{display:block}
+.dots{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--blue);animation:blink 1.3s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,100%{opacity:.15}50%{opacity:1}}
+.load-t{font-size:13px;color:var(--text2)}
+
+.res{display:none}
+.res.show{display:block}
+
+.aud-note{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:var(--r);padding:11px 1rem;font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.6}
+.aud-note strong{color:var(--text);font-weight:600}
+
+.overall{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;display:flex;align-items:stretch;gap:1.5rem;margin-bottom:1rem}
+.o-strip{width:4px;border-radius:2px;flex-shrink:0}
+.o-num{font-size:56px;font-weight:600;line-height:1;min-width:88px;align-self:center}
+.o-meta{flex:1}
+.o-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.o-verdict{font-size:17px;font-weight:600;margin-bottom:5px}
+.o-sum{font-size:13px;color:var(--text2);line-height:1.55}
+
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem}
+@media(max-width:560px){.metrics-row{grid-template-columns:repeat(2,1fr)}}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.875rem 1rem}
+.metric-name{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.metric-val{font-size:26px;font-weight:600;font-family:'DM Mono',monospace;margin-bottom:2px}
+.metric-ideal{font-size:10px;color:var(--text3);margin-bottom:4px}
+.metric-badge{display:inline-block;font-size:9px;font-weight:600;padding:2px 6px;border-radius:20px;letter-spacing:.03em}
+
+.dims{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+@media(max-width:560px){.dims{grid-template-columns:repeat(2,1fr)}}
+.dcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1rem}
+.d-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.d-icon{font-size:17px;color:var(--text3)}
+.pill{font-size:10px;font-weight:600;padding:3px 7px;border-radius:20px}
+.pg{background:var(--green-bg);color:var(--green-t)}
+.pa{background:var(--amber-bg);color:var(--amber-t)}
+.pr{background:var(--red-bg);color:var(--red-t)}
+.d-name{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.d-val{font-size:32px;font-weight:600;margin-bottom:10px}
+.track{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.fill{height:100%;border-radius:2px;width:0;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.d-note{font-size:11px;color:var(--text2);line-height:1.5}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+@media(max-width:580px){.two-col{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.panel-head{background:var(--surface2);padding:10px 1.1rem;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.panel-row{display:flex;align-items:flex-start;gap:9px;padding:10px 1.1rem;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5}
+.panel-row:last-child{border-bottom:none}
+.p-ico{font-size:14px;flex-shrink:0;margin-top:1px}
+.p-text{color:var(--text)}
+.p-sub{font-size:10px;color:var(--text3);margin-top:2px}
+
+.footer{text-align:center;margin-top:2.5rem;font-size:11px;color:var(--text3)}
+.footer span{color:var(--blue);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hd">
+  <div class="brand">
+    <div class="bdot"></div>
+    <span class="bname">Polestar Analytics</span>
+    <span class="sep">·</span>
+    <span class="tname">Content Quality Checker</span>
+  </div>
+  <span class="ver">v2.0</span>
+</div>
+
+<div class="icard">
+  <div class="lbl">Upload a file or paste content</div>
+  <div class="upload-zone" id="drop-zone">
+    <input type="file" id="file-input" accept=".txt,.md,.docx,.doc" />
+    <div class="uz-icon"><i class="ti ti-upload"></i></div>
+    <div class="uz-text">Drop a file here or click to browse</div>
+    <div class="uz-sub">.txt · .md · .docx supported</div>
+    <div class="uz-file" id="file-name"></div>
+  </div>
+  <div class="divider">or paste directly</div>
+  <textarea id="content" placeholder="Paste your blog post, case study, web copy, or any content here…"></textarea>
+  <div class="meta-row">
+    <div class="meta-field">
+      <div class="lbl" style="margin-top:10px">Content type</div>
+      <input type="text" id="ctype" placeholder="e.g. Blog post, case study, web copy" />
+    </div>
+    <div class="meta-field">
+      <div class="lbl" style="margin-top:10px">Target audience</div>
+      <input type="text" id="audience" placeholder="e.g. Pharma executives, data engineers" />
+    </div>
+  </div>
+  <div class="meta-row" style="margin-top:8px">
+    <div class="meta-field">
+      <div class="lbl">Target keywords (optional)</div>
+      <input type="text" id="keywords" placeholder="e.g. HCP engagement, data platform" />
+    </div>
+    <div class="meta-field">
+      <div class="lbl">Industry vertical</div>
+      <input type="text" id="vertical" placeholder="e.g. Pharma, BFSI, CPG" />
+    </div>
+  </div>
+</div>
+
+<div class="acts">
+  <button class="btn-p" id="btn-run" onclick="runAnalysis()">
+    <i class="ti ti-sparkles"></i> Analyze content
+  </button>
+  <button class="btn-g" onclick="clearAll()">Clear</button>
+  <span class="wc" id="wc">0 words</span>
+</div>
+
+<div class="err" id="err"></div>
+<div class="load" id="load">
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  <div class="load-t" id="load-msg">Scoring your content…</div>
+</div>
+
+<div class="res" id="res">
+  <div class="aud-note" id="aud-note"></div>
+  <div class="overall">
+    <div class="o-strip" id="o-strip"></div>
+    <div class="o-num" id="o-num">—</div>
+    <div class="o-meta">
+      <div class="o-label">Overall quality score</div>
+      <div class="o-verdict" id="o-verdict"></div>
+      <div class="o-sum" id="o-sum"></div>
+    </div>
+  </div>
+  <div class="metrics-row" id="metrics-row"></div>
+  <div class="dims" id="dims-grid"></div>
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-head"><i class="ti ti-thumb-up" style="font-size:13px"></i> What's working</div>
+      <div id="strengths-list"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><i class="ti ti-alert-triangle" style="font-size:13px"></i> Issues to fix</div>
+      <div id="flags-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Powered by <span>Claude</span> · Internal tool · Polestar Analytics</div>
+</div>
+
+<script>
+const DIMS=[
+  {key:'ai_flavor',  icon:'ti-robot',       name:'Human-sounding'},
+  {key:'seo',        icon:'ti-search',       name:'SEO signals'},
+  {key:'clarity',    icon:'ti-bulb',         name:'Clarity'},
+  {key:'jargon',     icon:'ti-ban',          name:'Jargon-free'},
+  {key:'specificity',icon:'ti-target',       name:'Fact specificity'},
+  {key:'structure',  icon:'ti-layout-rows',  name:'Structure'},
+];
+const LOAD_MSGS=['Computing readability metrics…','Checking for AI-flavor patterns…','Evaluating SEO signals…','Scoring clarity and specificity…','Pulling it all together…'];
+let loadInterval;
+
+const ta=document.getElementById('content');
+ta.addEventListener('input',updateWC);
+function updateWC(){const w=ta.value.trim().split(/\s+/).filter(Boolean).length;document.getElementById('wc').textContent=w+' word'+(w!==1?'s':'')}
+
+// File upload
+const fileInput=document.getElementById('file-input');
+const dropZone=document.getElementById('drop-zone');
+fileInput.addEventListener('change',e=>handleFile(e.target.files[0]));
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag')});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag');handleFile(e.dataTransfer.files[0])});
+
+function handleFile(file){
+  if(!file)return;
+  const name=file.name.toLowerCase();
+  const fnEl=document.getElementById('file-name');
+  fnEl.style.display='block';
+  fnEl.textContent='📄 '+file.name;
+  if(name.endsWith('.txt')||name.endsWith('.md')){
+    const r=new FileReader();
+    r.onload=e=>{ta.value=e.target.result;updateWC()};
+    r.readAsText(file);
+  } else if(name.endsWith('.docx')||name.endsWith('.doc')){
+    const load=()=>{
+      const r=new FileReader();
+      r.onload=e=>{
+        mammoth.extractRawText({arrayBuffer:e.target.result})
+          .then(res=>{ta.value=res.value;updateWC()})
+          .catch(()=>showErr('Could not read .docx. Try pasting the content directly.'));
+      };
+      r.readAsArrayBuffer(file);
+    };
+    if(window.mammoth){load();}
+    else{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+      s.onload=load;
+      s.onerror=()=>showErr('Could not load docx reader. Try pasting the content directly.');
+      document.head.appendChild(s);
+    }
+  } else {
+    showErr('Unsupported file type. Use .txt, .md, or .docx');
+  }
+}
+
+// Client-side readability
+function countSyllables(word){
+  word=word.toLowerCase().replace(/[^a-z]/g,'');
+  if(!word)return 0;
+  if(word.length<=3)return 1;
+  word=word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/,'').replace(/^y/,'');
+  const m=word.match(/[aeiouy]{1,2}/g);
+  return m?m.length:1;
+}
+function computeReadability(text){
+  const sentences=text.split(/[.!?]+/).filter(s=>s.trim().length>3);
+  const words=text.trim().split(/\s+/).filter(Boolean);
+  const syllables=words.reduce((a,w)=>a+countSyllables(w),0);
+  const asl=sentences.length>0?words.length/sentences.length:0;
+  const asw=words.length>0?syllables/words.length:0;
+  const fk=206.835-(1.015*asl)-(84.6*asw);
+  const fog=0.4*(asl+100*(words.filter(w=>countSyllables(w)>=3).length/words.length));
+  return{
+    fk:Math.round(Math.max(0,Math.min(100,fk))*10)/10,
+    fog:Math.round(fog*10)/10,
+    asl:Math.round(asl*10)/10,
+    wordCount:words.length
+  };
+}
+
+function clearAll(){
+  ['content','ctype','audience','keywords','vertical'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('wc').textContent='0 words';
+  document.getElementById('file-name').style.display='none';
+  fileInput.value='';
+  document.getElementById('res').classList.remove('show');
+  document.getElementById('err').classList.remove('show');
+}
+
+function scoreStyle(s){
+  if(s>=75)return{color:'#1D9E75',pc:'pg',label:'Good'};
+  if(s>=50)return{color:'#BA7517',pc:'pa',label:'Fair'};
+  return{color:'#D85A30',pc:'pr',label:'Needs work'};
+}
+
+async function runAnalysis(){
+  const content=ta.value.trim();
+  if(content.length<100){showErr('Please paste at least a paragraph of content to analyze.');return}
+  const ctype=document.getElementById('ctype').value.trim()||'content';
+  const audience=document.getElementById('audience').value.trim();
+  const keywords=document.getElementById('keywords').value.trim();
+  const vertical=document.getElementById('vertical').value.trim();
+
+  document.getElementById('err').classList.remove('show');
+  document.getElementById('res').classList.remove('show');
+  document.getElementById('load').classList.add('show');
+  document.getElementById('btn-run').disabled=true;
+
+  let mi=0;
+  loadInterval=setInterval(()=>{mi=(mi+1)%LOAD_MSGS.length;document.getElementById('load-msg').textContent=LOAD_MSGS[mi]},2000);
+
+  const rl=computeReadability(content);
+
+  const system=`You are a senior content quality analyst for Polestar Analytics, a data engineering, AI, and analytics firm. Score B2B content with editorial precision. Return ONLY valid JSON — no markdown, no preamble.
+
+CRITICAL: Calibrate all scores to the stated audience. Technical B2B content for pharma executives, data engineers, or finance leaders is expected to be denser than consumer content. Gunning Fog 11–14 is perfectly appropriate for such audiences. Never penalise appropriate technical complexity.
+
+Score these 6 dimensions (0–100):
+- ai_flavor: Human-sounding score (higher = more human). Penalise: hollow openers, padded transitions, overuse of leverage/utilize/streamline/unlock/robust/cutting-edge, formulaic bullet symmetry, generic conclusions. Reward: editorial confidence, distinctive rhythm, unexpected phrasing, real examples.
+- seo: Keyword integration quality. Reward: natural keyword use, clear topic focus, heading signals. HEAVILY PENALISE unnatural keyword stuffing — exact-match phrases jammed in awkwardly (e.g. "hcp pharmaceutical company", "what is HCP in pharma" repeated unnaturally) are a serious SEO red flag in 2026.
+- clarity: Conciseness. Every sentence earns its place. Penalise padding, redundant openers, throat-clearing. Reward tight purposeful prose.
+- jargon: Jargon-free score (higher = less unexplained jargon). Flag unexplained acronyms or insider terms used without definition. Reward clear explanations alongside technical terms.
+- specificity: Concrete data, named reports, real percentages, specific examples vs. vague superlatives. Reward cited statistics and named sources heavily.
+- structure: Logical flow, heading hierarchy, section transitions, whether the conclusion earns its weight.
+
+Return this exact JSON:
+{
+  "overall":<0-100>,
+  "verdict":"<4-7 word phrase>",
+  "summary":"<one precise sentence naming a specific strength AND a specific weakness>",
+  "audience_note":"<one sentence: how you calibrated for this audience and whether complexity is appropriate>",
+  "scores":{"ai_flavor":<0-100>,"seo":<0-100>,"clarity":<0-100>,"jargon":<0-100>,"specificity":<0-100>,"structure":<0-100>},
+  "notes":{"ai_flavor":"<12 words max>","seo":"<12 words max>","clarity":"<12 words max>","jargon":"<12 words max>","specificity":"<12 words max>","structure":"<12 words max>"},
+  "strengths":["<specific thing done well — quote or name the actual element>"],
+  "flags":[{"dim":"<dimension>","issue":"<specific, actionable — quote the exact phrase if possible>"}]
+}
+strengths: 3–4 items, specific. flags: 3–6 items, most critical first, quote actual phrases.`;
+
+  const userMsg=`Content type: ${ctype}\n${audience?'Target audience: '+audience+'\n':''}${vertical?'Industry vertical: '+vertical+'\n':''}${keywords?'Target keywords: '+keywords+'\n':''}Word count: ${rl.wordCount}\n\nContent:\n---\n${content}\n---`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system,messages:[{role:'user',content:userMsg}]})
+    });
+    const data=await resp.json();
+    const raw=(data.content||[]).map(b=>b.text||'').join('');
+    const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    render(parsed,rl,audience);
+  }catch(e){
+    showErr('Analysis failed. Please try again.');
+  }finally{
+    clearInterval(loadInterval);
+    document.getElementById('load').classList.remove('show');
+    document.getElementById('btn-run').disabled=false;
+  }
+}
+
+function render(d,rl,audience){
+  const audEl=document.getElementById('aud-note');
+  if(d.audience_note){audEl.innerHTML='<strong>Scoring calibration:</strong> '+d.audience_note;audEl.style.display='block';}
+  else{audEl.style.display='none';}
+
+  const overall=Math.round(d.overall);
+  const oc=scoreStyle(overall);
+  document.getElementById('o-num').textContent=overall;
+  document.getElementById('o-num').style.color=oc.color;
+  document.getElementById('o-strip').style.background=oc.color;
+  document.getElementById('o-verdict').textContent=d.verdict||'';
+  document.getElementById('o-sum').textContent=d.summary||'';
+
+  // Readability metrics
+  const mr=document.getElementById('metrics-row');
+  mr.innerHTML='';
+  const isTech=audience&&/pharma|tech|engineer|executive|medical|clinical|finance|bfsi/i.test(audience);
+  const fkB=rl.fk>=60?{l:'Easy read',c:'pg'}:rl.fk>=45?{l:'Appropriate',c:'pa'}:{l:'Dense',c:'pr'};
+  const fogB=isTech?(rl.fog<=14?{l:'Appropriate',c:'pg'}:rl.fog<=17?{l:'Complex',c:'pa'}:{l:'Very complex',c:'pr'}):(rl.fog<=12?{l:'Clear',c:'pg'}:rl.fog<=15?{l:'Moderate',c:'pa'}:{l:'Complex',c:'pr'});
+  const aslB=rl.asl<=20?{l:'Good',c:'pg'}:rl.asl<=28?{l:'Moderate',c:'pa'}:{l:'Too long',c:'pr'};
+  const wcB=rl.wordCount>=800?{l:'Substantial',c:'pg'}:rl.wordCount>=400?{l:'Medium',c:'pa'}:{l:'Short',c:'pr'};
+  [{val:rl.fk,name:'Flesch-Kincaid',ideal:'45–60 for B2B',b:fkB},{val:rl.fog,name:'Gunning Fog',ideal:'11–14 for tech B2B',b:fogB},{val:rl.asl,name:'Avg sentence',ideal:'≤20 words ideal',b:aslB},{val:rl.wordCount,name:'Word count',ideal:'800+ recommended',b:wcB}].forEach(m=>{
+    const c=document.createElement('div');c.className='metric-card';
+    c.innerHTML=`<div class="metric-name">${m.name}</div><div class="metric-val">${m.val}</div><div class="metric-ideal">${m.ideal}</div><span class="metric-badge ${m.b.c}">${m.b.l}</span>`;
+    mr.appendChild(c);
+  });
+
+  // Dimension cards
+  const grid=document.getElementById('dims-grid');grid.innerHTML='';
+  DIMS.forEach(dim=>{
+    const score=Math.round(d.scores?.[dim.key]??0);
+    const note=d.notes?.[dim.key]??'';
+    const c=scoreStyle(score);
+    const card=document.createElement('div');card.className='dcard';
+    card.innerHTML=`<div class="d-top"><i class="ti ${dim.icon} d-icon"></i><span class="pill ${c.pc}">${c.label}</span></div><div class="d-name">${dim.name}</div><div class="d-val" style="color:${c.color}">${score}</div><div class="track"><div class="fill" style="background:${c.color}" data-w="${score}"></div></div><div class="d-note">${note}</div>`;
+    grid.appendChild(card);
+  });
+  setTimeout(()=>document.querySelectorAll('.fill').forEach(el=>el.style.width=el.dataset.w+'%'),60);
+
+  // Strengths
+  const sl=document.getElementById('strengths-list');sl.innerHTML='';
+  (d.strengths||[]).forEach(s=>{const row=document.createElement('div');row.className='panel-row';row.innerHTML=`<i class="ti ti-circle-check p-ico" style="color:var(--green)"></i><div class="p-text">${s}</div>`;sl.appendChild(row)});
+  if(!d.strengths?.length)sl.innerHTML='<div class="panel-row"><div class="p-text" style="color:var(--text3)">No specific strengths identified.</div></div>';
+
+  // Flags
+  const fl=document.getElementById('flags-list');fl.innerHTML='';
+  (d.flags||[]).forEach(f=>{const row=document.createElement('div');row.className='panel-row';row.innerHTML=`<i class="ti ti-alert-triangle p-ico" style="color:var(--amber)"></i><div><div class="p-text">${f.issue}</div><div class="p-sub">${f.dim}</div></div>`;fl.appendChild(row)});
+  if(!d.flags?.length)fl.innerHTML='<div class="panel-row"><div class="p-text" style="color:var(--text3)">No major issues flagged.</div></div>';
+
+  document.getElementById('res').classList.add('show');
+  document.getElementById('res').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function showErr(msg){const el=document.getElementById('err');el.textContent=msg;el.classList.add('show')}
+</script>
+</body>
+</html>
